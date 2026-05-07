@@ -1,0 +1,21 @@
+{
+  "name": "Melon Greenhouse IoT",
+  "short_name": "MelonGH",
+  "description": "Monitoring dan kontrol greenhouse melon",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2e7d32",
+  "background_color": "#e8f5e9",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192?text=🌱",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512?text=🌱",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

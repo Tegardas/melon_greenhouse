@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Melon Greenhouse IoT Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-seedling"></i>
+                    <h1>Melon<span>Greenhouse</span></h1>
+                </div>
+                <div class="connection-status" id="connectionStatus">
+                    <i class="fas fa-plug"></i>
+                    <span>Connecting...</span>
+                </div>
+            </div>
+            <div class="datetime" id="datetime">
+                <i class="far fa-calendar-alt"></i>
+                <span>Loading...</span>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card phase-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Fase Tanam</h3>
+                    <div class="stat-value" id="phaseValue">-</div>
+                    <div class="stat-sub" id="phaseDay">Hari ke -</div>
+                </div>
+            </div>
+            <div class="stat-card ec-card">
+                <div class="stat-icon">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>EC Larutan</h3>
+                    <div class="stat-value" id="ecValue">-</div>
+                    <div class="stat-sub" id="ecTarget">Target: -</div>
+                </div>
+            </div>
+            <div class="stat-card water-card">
+                <div class="stat-icon">
+                    <i class="fas fa-water"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Water Level</h3>
+                    <div class="stat-value" id="waterLevelValue">-</div>
+                    <div class="stat-sub" id="waterLevelVolume">- L</div>
+                </div>
+            </div>
+            <div class="stat-card watering-card">
+                <div class="stat-icon">
+                    <i class="fas fa-sprinkler"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Penyiraman</h3>
+                    <div class="stat-value" id="wateringCount">-</div>
+                    <div class="stat-sub" id="wateringLimit">/ - hari ini</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Planting Date Panel -->
+            <div class="panel planting-panel">
+                <div class="panel-header">
+                    <i class="fas fa-calendar-plus"></i>
+                    <h2>Tanggal Tanam</h2>
+                    <button class="btn-refresh" id="refreshPlantingBtn">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="planting-content">
+                    <div class="planting-display" id="plantingDisplay">
+                        <div class="planting-info">
+                            <i class="fas fa-seedling"></i>
+                            <div>
+                                <span class="planting-label">Tanggal Tanam:</span>
+                                <strong id="plantingDateValue">-</strong>
+                            </div>
+                        </div>
+                        <div class="planting-info">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <span class="planting-label">Hari ke:</span>
+                                <strong id="daysSincePlanting">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="planting-edit">
+                        <h4><i class="fas fa-edit"></i> Ubah Tanggal Tanam</h4>
+                        <div class="planting-input-group">
+                            <input type="date" id="plantingDateInput">
+                            <input type="time" id="plantingTimeInput" step="1">
+                            <button class="btn-save" id="savePlantingBtn">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                        </div>
+                        <div class="planting-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Tanggal tanam akan digunakan untuk menghitung fase pertumbuhan otomatis</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Greenhouse 1 Panel -->
+            <div class="panel greenhouse-panel">
+                <div class="panel-header">
+                    <i class="fas fa- greenhouse-icon"></i>
+                    <h2>Greenhouse 1</h2>
+                    <span class="status-badge" id="gh1Status">Waiting</span>
+                </div>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <i class="fas fa-thermometer-half"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Suhu</span>
+                            <span class="sensor-value" id="gh1Temp">--</span>
+                            <span class="sensor-unit">°C</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Kelembaban</span>
+                            <span class="sensor-value" id="gh1Hum">--</span>
+                            <span class="sensor-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <i class="fas fa-sun"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Cahaya</span>
+                            <span class="sensor-value" id="gh1Light">--</span>
+                            <span class="sensor-unit">Lux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="weather-status" id="gh1Weather">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span>Menunggu data...</span>
+                </div>
+            </div>
+
+            <!-- Greenhouse 2 Panel -->
+            <div class="panel greenhouse-panel">
+                <div class="panel-header">
+                    <i class="fas fa- greenhouse-icon"></i>
+                    <h2>Greenhouse 2</h2>
+                    <span class="status-badge" id="gh2Status">Waiting</span>
+                </div>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <i class="fas fa-thermometer-half"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Suhu</span>
+                            <span class="sensor-value" id="gh2Temp">--</span>
+                            <span class="sensor-unit">°C</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Kelembaban</span>
+                            <span class="sensor-value" id="gh2Hum">--</span>
+                            <span class="sensor-unit">%</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <i class="fas fa-sun"></i>
+                        <div class="sensor-info">
+                            <span class="sensor-label">Cahaya</span>
+                            <span class="sensor-value" id="gh2Light">--</span>
+                            <span class="sensor-unit">Lux</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="weather-status" id="gh2Weather">
+                    <i class="fas fa-cloud-sun"></i>
+                    <span>Menunggu data...</span>
+                </div>
+            </div>
+
+            <!-- Mixing Status Panel -->
+            <div class="panel mixing-panel">
+                <div class="panel-header">
+                    <i class="fas fa-flask"></i>
+                    <h2>Status Mixing</h2>
+                </div>
+                <div class="mixing-status" id="mixingStatus">
+                    <div class="status-indicator" id="mixingIndicator"></div>
+                    <span id="mixingStatusText">Idle</span>
+                </div>
+                <div class="mixing-details">
+                    <div class="detail-item">
+                        <span>Volume Tersedia:</span>
+                        <strong id="availableVolume">0 L</strong>
+                    </div>
+                    <div class="detail-item">
+                        <span>Koreksi EC:</span>
+                        <strong id="correctionAttempts">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule Panel -->
+            <div class="panel schedule-panel">
+                <div class="panel-header">
+                    <i class="fas fa-clock"></i>
+                    <h2>Jadwal Watering</h2>
+                    <button class="btn-refresh" id="refreshScheduleBtn">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="schedule-list" id="scheduleList">
+                    <div class="schedule-empty">Loading jadwal...</div>
+                </div>
+
+                <!-- Greenhouse Selection Mode -->
+                <div class="gh-mode-section">
+                    <div class="gh-mode-header">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Mode Penyiraman</span>
+                    </div>
+                    <div class="gh-mode-buttons">
+                        <button class="gh-mode-btn" data-mode="0" id="ghModeBoth">
+                            <i class="fas fa-seedling"></i>
+                            <i class="fas fa-seedling"></i>
+                            <span>Keduanya</span>
+                        </button>
+                        <button class="gh-mode-btn" data-mode="1" id="ghMode1">
+                            <i class="fas fa-seedling"></i>
+                            <span>GH1 Saja</span>
+                        </button>
+                        <button class="gh-mode-btn" data-mode="2" id="ghMode2">
+                            <i class="fas fa-seedling"></i>
+                            <span>GH2 Saja</span>
+                        </button>
+                    </div>
+                    <div class="gh-mode-status" id="ghModeStatus">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Mode saat ini: <strong id="currentGhMode">Keduanya (GH1 & GH2)</strong></span>
+                    </div>
+                </div>
+                <div class="auto-mode">
+                    <span>Mode Otomatis:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoModeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <span id="autoModeStatus">ON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h3><i class="fas fa-gamepad"></i> Manual Control</h3>
+            <div class="control-buttons">
+                <button class="control-btn mix-btn" id="mixBtn">
+                    <i class="fas fa-flask"></i>
+                    <span>Mix Larutan</span>
+                </button>
+                <button class="control-btn water-btn" id="waterBtn">
+                    <i class="fas fa-sprinkler"></i>
+                    <span>Watering Both</span>
+                </button>
+                <button class="control-btn water1-btn" id="water1Btn">
+                    <i class="fas fa-tint"></i>
+                    <span>Watering GH1</span>
+                </button>
+                <button class="control-btn water2-btn" id="water2Btn">
+                    <i class="fas fa-tint"></i>
+                    <span>Watering GH2</span>
+                </button>
+            </div>
+            <div class="control-config">
+                <div class="config-item">
+                    <label>Target EC:</label>
+                    <input type="number" id="targetEC" step="0.1" value="1.8" placeholder="1.8">
+                    <span>mS/cm</span>
+                </div>
+                <div class="config-item">
+                    <label>Volume:</label>
+                    <input type="number" id="mixVolume" step="10" value="100" placeholder="100">
+                    <span>L</span>
+                </div>
+                <div class="config-item">
+                    <label>Volume/Plant:</label>
+                    <input type="number" id="waterPlantVolume" step="50" value="800" placeholder="800">
+                    <span>ml</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Panel -->
+        <div class="alert-panel" id="alertPanel">
+            <h3><i class="fas fa-bell"></i> Notifikasi</h3>
+            <div class="alert-list" id="alertList">
+                <div class="alert-placeholder">Belum ada notifikasi</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Melon Greenhouse IoT System | Real-time Monitoring</p>
+            <p class="last-update">Last update: <span id="lastUpdate">-</span></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mqtt@4.3.7/dist/mqtt.min.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
