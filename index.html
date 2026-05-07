@@ -114,6 +114,42 @@
                             <span>Tanggal tanam akan digunakan untuk menghitung fase pertumbuhan otomatis</span>
                         </div>
                     </div>
+                    <!-- Additional Configuration -->
+                    <div class="planting-config">
+                        <h4><i class="fas fa-tachometer-alt"></i> Konfigurasi Tanaman & Nutrisi</h4>
+                        <div class="config-grid">
+                            <div class="config-row">
+                                <label>Jumlah Tanaman GH1:</label>
+                                <input type="number" id="plantCountGH1" value="336" step="1" min="0">
+                            </div>
+                            <div class="config-row">
+                                <label>Jumlah Tanaman GH2:</label>
+                                <input type="number" id="plantCountGH2" value="336" step="1" min="0">
+                            </div>
+                            <div class="config-row">
+                                <label>Konsentrasi Nutrisi A (ppm):</label>
+                                <input type="number" id="nutrientAConc" value="100" step="10" min="0">
+                            </div>
+                            <div class="config-row">
+                                <label>Konsentrasi Nutrisi B (ppm):</label>
+                                <input type="number" id="nutrientBConc" value="100" step="10" min="0">
+                            </div>
+                            <div class="config-row">
+                                <label>Faktor Konversi PPM→EC:</label>
+                                <select id="ppmFactor">
+                                    <option value="500">500 (NaCl)</option>
+                                    <option value="700">700 (442)</option>
+                                </select>
+                            </div>
+                            <div class="config-row">
+                                <label>Kapasitas Tangki (L):</label>
+                                <input type="number" id="tankCapacity" value="200" step="10" min="10">
+                            </div>
+                        </div>
+                        <button class="btn-save-config" id="saveConfigBtn">
+                            <i class="fas fa-save"></i> Simpan Konfigurasi
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -277,6 +277,43 @@ header {
     gap: 8px;
 }
 
+.planting-config {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+.config-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0;
+}
+.config-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.config-row label {
+    width: 60%;
+    font-size: 13px;
+}
+.config-row input, .config-row select {
+    width: 35%;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+.btn-save-config {
+    width: 100%;
+    background: #2e7d32;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
     .planting-display {
