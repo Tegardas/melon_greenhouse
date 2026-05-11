@@ -17,8 +17,9 @@ const MQTT_CONFIG = {
         scheduleUpdate: 'RizkinK_1234/melon/watering/schedule_update',
         control: 'RizkinK_1234/melon/control/',
         gh_mode: 'RizkinK_1234/melon/control/gh_mode',
-        plantingDatetopic: 'RizkinK_1234/melon/planting_date',
-        configParams: 'RizkinK_1234/melon/config/parameters'
+        plantingDate: 'RizkinK_1234/melon/planting_date',
+        configParams: 'RizkinK_1234/melon/config/parameters',
+        configStatus: 'RizkinK_1234/melon/config/status'
     }
 };
 
@@ -107,12 +108,19 @@ function loadConfigFromLocalStorage() {
 }
 
 function saveConfigToLocalStorage() {
-    saveToLocalStorage('config_gh1_plants', document.getElementById('plantCountGH1').value);
-    saveToLocalStorage('config_gh2_plants', document.getElementById('plantCountGH2').value);
-    saveToLocalStorage('config_nutA_conc', document.getElementById('nutrientAConc').value);
-    saveToLocalStorage('config_nutB_conc', document.getElementById('nutrientBConc').value);
-    saveToLocalStorage('config_ppm_factor', document.getElementById('ppmFactor').value);
-    saveToLocalStorage('config_tank_capacity', document.getElementById('tankCapacity').value);
+    const gh1 = document.getElementById('plantCountGH1')?.value || '336';
+    const gh2 = document.getElementById('plantCountGH2')?.value || '336';
+    const nutA = document.getElementById('nutrientAConc')?.value || '100';
+    const nutB = document.getElementById('nutrientBConc')?.value || '100';
+    const ppmFact = document.getElementById('ppmFactor')?.value || '500';
+    const tankCap = document.getElementById('tankCapacity')?.value || '200';
+    
+    saveToLocalStorage('config_gh1_plants', gh1);
+    saveToLocalStorage('config_gh2_plants', gh2);
+    saveToLocalStorage('config_nutA_conc', nutA);
+    saveToLocalStorage('config_nutB_conc', nutB);
+    saveToLocalStorage('config_ppm_factor', ppmFact);
+    saveToLocalStorage('config_tank_capacity', tankCap);
 }
 
 // ====================================================================
@@ -244,12 +252,51 @@ function updatePlantingDisplay(date, time) {
 }
 
 function updatePlantingDateFromMQTT(data) {
-    console.log('Received planting date from ESP32:', data);
-    
-    // Format data dari ESP32: { status, year, month, day, hour, minute, second }
+    console.log('📥 Received planting date from ESP32:', data);
+    let year, month, day, hour, minute, second;
+
+    // === FORMAT 1: Dari ESP32 (status, year, month, day, hour, minute, second) ===
     if (data.year !== undefined && data.month !== undefined && data.day !== undefined) {
-        const plantingDate = `${data.year}-${String(data.month).padStart(2, '0')}-${String(data.day).padStart(2, '0')}`;
-        const plantingTime = `${String(data.hour).padStart(2, '0')}:${String(data.minute).padStart(2, '0')}:${String(data.second).padStart(2, '0')}`;
+        year = data.year;
+        month = data.month;
+        day = data.day;
+        hour = (data.hour !== undefined) ? data.hour : 0;
+        minute = (data.minute !== undefined) ? data.minute : 0;
+        second = (data.second !== undefined) ? data.second : 0;
+    }
+    // === FORMAT 2: planting_date + planting_time (string) ===
+    else if (data.planting_date && data.planting_time) {
+        const dateParts = data.planting_date.split('-');
+        const timeParts = data.planting_time.split(':');
+        if (dateParts.length === 3 && timeParts.length >= 2) {
+            year = parseInt(dateParts[0]);
+            month = parseInt(dateParts[1]);
+            day = parseInt(dateParts[2]);
+            hour = parseInt(timeParts[0]);
+            minute = parseInt(timeParts[1]);
+            second = (timeParts[2]) ? parseInt(timeParts[2]) : 0;
+        }
+    }
+    // === FORMAT 3: datetime string ===
+    else if (data.datetime) {
+        const parts = data.datetime.split(' ');
+        if (parts.length >= 2) {
+            const dateParts = parts[0].split('-');
+            const timeParts = parts[1].split(':');
+            if (dateParts.length === 3 && timeParts.length >= 2) {
+                year = parseInt(dateParts[0]);
+                month = parseInt(dateParts[1]);
+                day = parseInt(dateParts[2]);
+                hour = parseInt(timeParts[0]);
+                minute = parseInt(timeParts[1]);
+                second = (timeParts[2]) ? parseInt(timeParts[2]) : 0;
+            }
+        }
+    }
+
+    if (year !== undefined && month !== undefined && day !== undefined) {
+        const plantingDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const plantingTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
         
         // Simpan ke localStorage
         saveToLocalStorage(STORAGE_KEYS.PLANTING_DATE, plantingDate);
@@ -265,27 +312,8 @@ function updatePlantingDateFromMQTT(data) {
         // Update tampilan
         updatePlantingDisplay(plantingDate, plantingTime);
         addAlert('success', `Tanggal tanam disinkronkan dari ESP32: ${plantingDate} ${plantingTime}`);
-    }
-    // Format alternatif: planting_date & planting_time
-    else if (data.planting_date && data.planting_time) {
-        saveToLocalStorage(STORAGE_KEYS.PLANTING_DATE, data.planting_date);
-        saveToLocalStorage(STORAGE_KEYS.PLANTING_TIME, data.planting_time);
-        currentPlantingDate = `${data.planting_date} ${data.planting_time}`;
-        
-        const dateInput = document.getElementById('plantingDateInput');
-        const timeInput = document.getElementById('plantingTimeInput');
-        if (dateInput) dateInput.value = data.planting_date;
-        if (timeInput) timeInput.value = data.planting_time;
-        
-        updatePlantingDisplay(data.planting_date, data.planting_time);
-        addAlert('success', `Tanggal tanam disinkronkan dari ESP32: ${data.planting_date} ${data.planting_time}`);
-    }
-    // Format datetime string
-    else if (data.datetime) {
-        const parts = data.datetime.split(' ');
-        if (parts.length >= 2) {
-            updatePlantingDateFromMQTT({ planting_date: parts[0], planting_time: parts[1] });
-        }
+    } else {
+        console.warn('⚠️ Invalid planting date data received:', data);
     }
 }
 
@@ -333,21 +361,27 @@ function sendPlantingDate() {
 
 function sendConfigToMQTT() {
     if (!mqttClient || !mqttClient.connected) {
-        addAlert('danger', 'MQTT tidak terhubung');
+        addAlert('danger', 'Tidak terhubung ke MQTT broker!');
         return;
     }
+    
     const payload = {
-        gh1_plants: parseInt(document.getElementById('plantCountGH1').value),
-        gh2_plants: parseInt(document.getElementById('plantCountGH2').value),
-        nutrient_a_conc: parseFloat(document.getElementById('nutrientAConc').value),
-        nutrient_b_conc: parseFloat(document.getElementById('nutrientBConc').value),
-        ppm_factor: parseInt(document.getElementById('ppmFactor').value),
-        tank_capacity: parseFloat(document.getElementById('tankCapacity').value),
+        gh1_plants: parseInt(document.getElementById('plantCountGH1')?.value) || 336,
+        gh2_plants: parseInt(document.getElementById('plantCountGH2')?.value) || 336,
+        nutrient_a_conc: parseFloat(document.getElementById('nutrientAConc')?.value) || 100,
+        nutrient_b_conc: parseFloat(document.getElementById('nutrientBConc')?.value) || 100,
+        ppm_factor: parseInt(document.getElementById('ppmFactor')?.value) || 500,
+        tank_capacity: parseFloat(document.getElementById('tankCapacity')?.value) || 200,
         timestamp: Date.now()
     };
+    
     mqttClient.publish(MQTT_CONFIG.topics.configParams, JSON.stringify(payload), (err) => {
-        if (err) addAlert('danger', 'Gagal kirim konfigurasi');
-        else addAlert('success', 'Konfigurasi terkirim ke ESP32');
+        if (err) {
+            console.error('Publish error:', err);
+            addAlert('danger', 'Gagal mengirim konfigurasi');
+        } else {
+            addAlert('success', 'Konfigurasi terkirim ke ESP32');
+        }
     });
     saveConfigToLocalStorage();
 }
@@ -605,6 +639,84 @@ function updateSchedule(data) {
     scheduleList.innerHTML = html;
 }
 
+function updateUIFromConfigData(data) {
+    console.log('📥 Config status received:', data);
+
+    // Jumlah tanaman
+    if (data.gh1_plants !== undefined) {
+        document.getElementById('plantCountGH1').value = data.gh1_plants;
+        saveToLocalStorage('config_gh1_plants', data.gh1_plants);
+    }
+    if (data.gh2_plants !== undefined) {
+        document.getElementById('plantCountGH2').value = data.gh2_plants;
+        saveToLocalStorage('config_gh2_plants', data.gh2_plants);
+    }
+
+    // Konsentrasi nutrisi
+    if (data.nutrient_a_conc !== undefined) {
+        document.getElementById('nutrientAConc').value = data.nutrient_a_conc;
+        saveToLocalStorage('config_nutA_conc', data.nutrient_a_conc);
+    }
+    if (data.nutrient_b_conc !== undefined) {
+        document.getElementById('nutrientBConc').value = data.nutrient_b_conc;
+        saveToLocalStorage('config_nutB_conc', data.nutrient_b_conc);
+    }
+
+    // Faktor PPM
+    if (data.ppm_factor !== undefined) {
+        document.getElementById('ppmFactor').value = data.ppm_factor;
+        saveToLocalStorage('config_ppm_factor', data.ppm_factor);
+    }
+
+    // Kapasitas tangki
+    if (data.tank_capacity !== undefined) {
+        document.getElementById('tankCapacity').value = data.tank_capacity;
+        saveToLocalStorage('config_tank_capacity', data.tank_capacity);
+    }
+
+    // Auto mode
+    if (data.auto_mode !== undefined) {
+        const autoToggle = document.getElementById('autoModeToggle');
+        if (autoToggle) {
+            autoToggle.checked = data.auto_mode;
+            document.getElementById('autoModeStatus').textContent = data.auto_mode ? 'ON' : 'OFF';
+            saveAutoMode(data.auto_mode);
+        }
+    }
+
+    // GH mode (watering_gh)
+    if (data.watering_gh !== undefined) {
+        updateGhModeUI(data.watering_gh);
+        saveGhMode(data.watering_gh);
+    }
+
+    // Target EC
+    if (data.target_ec !== undefined) {
+        document.getElementById('targetEC').value = data.target_ec;
+        saveTargetEC(data.target_ec);
+    }
+
+    // Volume per plant
+    if (data.volume_per_plant !== undefined) {
+        document.getElementById('waterPlantVolume').value = data.volume_per_plant;
+        saveWaterVolume(data.volume_per_plant);
+    }
+
+    // Planting date & time
+    if (data.planting_date && data.planting_time) {
+        updatePlantingDateFromMQTT({ planting_date: data.planting_date, planting_time: data.planting_time });
+    } else if (data.planting_date) {
+        updatePlantingDateFromMQTT({ planting_date: data.planting_date, planting_time: '00:00:00' });
+    }
+}
+
+function requestConfig() {
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish('RizkinK_1234/melon/control/request_config', '{}');
+        console.log('📤 Requested config from ESP32');
+    }
+}
+
 function handleMessage(topic, message) {
     try {
         const data = JSON.parse(message);
@@ -625,8 +737,10 @@ function handleMessage(topic, message) {
             updateECCorrection(data);
         } else if (topic === MQTT_CONFIG.topics.scheduleUpdate) {
             updateSchedule(data);
-        } else if (topic === MQTT_CONFIG.topics.plantingDatetopic) {
+        } else if (topic === MQTT_CONFIG.topics.plantingDate) {
             updatePlantingDateFromMQTT(data);
+        } else if (topic === MQTT_CONFIG.topics.configStatus) {
+            updateUIFromConfigData(data);
         }
         
         const lastUpdate = document.getElementById('lastUpdate');
@@ -668,6 +782,8 @@ function initMQTT() {
                 });
             }
         });
+
+        requestConfig();
         
         addAlert('info', 'Terhubung ke MQTT Broker');
     });
@@ -780,7 +896,11 @@ function initEventListeners() {
     if (waterVolumeInput) waterVolumeInput.addEventListener('change', () => saveWaterVolume(waterVolumeInput.value));
     if (savePlantingBtn) savePlantingBtn.addEventListener('click', sendPlantingDate);
     if (refreshScheduleBtn) refreshScheduleBtn.addEventListener('click', () => publishCommand('request_data', 'schedule'));
-    if (saveConfigBtn) saveConfigBtn.addEventListener('click', sendConfigToMQTT);
+    if (saveConfigBtn) {
+        saveConfigBtn.addEventListener('click', () => {
+            sendConfigToMQTT();
+        });
+    }
 }
 
 // ====================================================================
